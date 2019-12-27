@@ -1,0 +1,26 @@
+
+
+syntax = "proto3";
+
+package helloworld;
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
+
+
+service Greeter {
+
+    rpc SayHello (HelloRequest) returns (HelloReply); 
+}
+
+//package name
+//name of messages
+//fields in messages
+
+//generate the files with this
+//python3 -m grpc_tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/helloworld.proto

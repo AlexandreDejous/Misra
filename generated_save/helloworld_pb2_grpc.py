@@ -5,8 +5,8 @@ import helloworld_pb2 as helloworld__pb2
 
 
 class GreeterStub(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """The greeting service definition.
+  """
 
   def __init__(self, channel):
     """Constructor.
@@ -22,12 +22,12 @@ class GreeterStub(object):
 
 
 class GreeterServicer(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """The greeting service definition.
+  """
 
   def SayHello(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Sends a greeting
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
