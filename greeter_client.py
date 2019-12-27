@@ -22,6 +22,29 @@ import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 
+#------
+
+from concurrent import futures
+
+from threading import Thread
+#-----------------------
+
+class Greeter(helloworld_pb2_grpc.GreeterServicer):
+
+    def SayHello(self, request, context):
+        print("server received a message : %s" % request.name)
+        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name) #info is gathered here
+
+
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
+
+#----------------------------------------
+
 
 def run(data):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
@@ -38,6 +61,10 @@ def run(data):
 if __name__ == '__main__':
     data = '1'
     #logging.basicConfig()
+    t = Thread(target=serve)
+
+    t.start()
+
     while(data != '0'):
         data = input("")
         run(data)
