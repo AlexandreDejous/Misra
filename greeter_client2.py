@@ -16,6 +16,7 @@
 #from __future__ import print_function
 #import logging
 import sys
+import time
 
 import grpc
 
@@ -26,12 +27,24 @@ import helloworld_pb2_grpc
 
 from concurrent import futures
 
-from threading import Thread
-#-----------------------
+from threading import Thread, Lock
+
+#-------------------------
+
+
+
+
+
+
+
+
+
+#-----------------------server side
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     def SayHello(self, request, context):
+        Thread(target=writeQ(request.name)).start()
         print("server received a message : %s" % request.name)
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name) #info is gathered here
 
@@ -40,33 +53,56 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     server.add_insecure_port('[::]:50051')
+    server.add_insecure_port('[::]:50052')
+    server.add_insecure_port('[::]:50053')
+    server.add_insecure_port('[::]:50054')
     server.start()
     server.wait_for_termination()
 
-#----------------------------------------
+#----------------------------------------client side
+
+def writeQ(value):
+    lock.acquire()
+    global q
+    q.append(value)
+    lock.release()
+
+#def readQ():
+#    time.sleep(20)
+#    lock.acquire()
+#    global q
+#    print(q)
+#    lock.release()
 
 
-def run(data):
+def send(data, address):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
 
-    with grpc.insecure_channel('localhost:50052') as channel:
+    with grpc.insecure_channel(address) as channel:
     #with grpc.insecure_channel('192.168.1.27:50051') as channel:
+
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         response = stub.SayHello(helloworld_pb2.HelloRequest(name=data))#info is sent here
+        
     print("Greeter client received: " + response.message)
 
 
 if __name__ == '__main__':
     data = '1'
     #logging.basicConfig()
+    lock = Lock()
+    q = []
+    #Thread(target=readQ).start()
+
     t = Thread(target=serve)
 
     t.start()
 
     while(data != '0'):
         data = input("")
-        run(data)
+        address = 'localhost:50054'
+        send(data,address)
 
     sys.exit
