@@ -14,10 +14,15 @@ class GreeterStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.SayHello = channel.unary_unary(
-        '/helloworld.Greeter/SayHello',
-        request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
-        response_deserializer=helloworld__pb2.HelloReply.FromString,
+    self.Marker = channel.unary_unary(
+        '/helloworld.Greeter/Marker',
+        request_serializer=helloworld__pb2.MarkerRequest.SerializeToString,
+        response_deserializer=helloworld__pb2.MarkerReply.FromString,
+        )
+    self.Message = channel.unary_unary(
+        '/helloworld.Greeter/Message',
+        request_serializer=helloworld__pb2.MessageRequest.SerializeToString,
+        response_deserializer=helloworld__pb2.MessageReply.FromString,
         )
 
 
@@ -25,7 +30,14 @@ class GreeterServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def SayHello(self, request, context):
+  def Marker(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def Message(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -35,10 +47,15 @@ class GreeterServicer(object):
 
 def add_GreeterServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'SayHello': grpc.unary_unary_rpc_method_handler(
-          servicer.SayHello,
-          request_deserializer=helloworld__pb2.HelloRequest.FromString,
-          response_serializer=helloworld__pb2.HelloReply.SerializeToString,
+      'Marker': grpc.unary_unary_rpc_method_handler(
+          servicer.Marker,
+          request_deserializer=helloworld__pb2.MarkerRequest.FromString,
+          response_serializer=helloworld__pb2.MarkerReply.SerializeToString,
+      ),
+      'Message': grpc.unary_unary_rpc_method_handler(
+          servicer.Message,
+          request_deserializer=helloworld__pb2.MessageRequest.FromString,
+          response_serializer=helloworld__pb2.MessageReply.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

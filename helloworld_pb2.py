@@ -20,30 +20,44 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='helloworld',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x10helloworld.proto\x12\nhelloworld\"+\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05name2\x18\x02 \x01(\t\"/\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x10\n\x08message2\x18\x02 \x01(\t2G\n\x07Greeter\x12<\n\x08SayHello\x12\x18.helloworld.HelloRequest\x1a\x16.helloworld.HelloReplyb\x06proto3')
+  serialized_pb=_b('\n\x10helloworld.proto\x12\nhelloworld\"J\n\rMarkerRequest\x12\x0c\n\x04TYPE\x18\x01 \x01(\t\x12\x0f\n\x07M_ROUND\x18\x02 \x01(\x03\x12\x0e\n\x06SENDER\x18\x03 \x01(\t\x12\n\n\x02NB\x18\x04 \x01(\x03\"\x1b\n\x0bMarkerReply\x12\x0c\n\x04TYPE\x18\x01 \x01(\t\"\x1e\n\x0eMessageRequest\x12\x0c\n\x04TYPE\x18\x01 \x01(\t\"\x1c\n\x0cMessageReply\x12\x0c\n\x04TYPE\x18\x01 \x01(\t2\x88\x01\n\x07Greeter\x12<\n\x06Marker\x12\x19.helloworld.MarkerRequest\x1a\x17.helloworld.MarkerReply\x12?\n\x07Message\x12\x1a.helloworld.MessageRequest\x1a\x18.helloworld.MessageReplyb\x06proto3')
 )
 
 
 
 
-_HELLOREQUEST = _descriptor.Descriptor(
-  name='HelloRequest',
-  full_name='helloworld.HelloRequest',
+_MARKERREQUEST = _descriptor.Descriptor(
+  name='MarkerRequest',
+  full_name='helloworld.MarkerRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='helloworld.HelloRequest.name', index=0,
+      name='TYPE', full_name='helloworld.MarkerRequest.TYPE', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='name2', full_name='helloworld.HelloRequest.name2', index=1,
-      number=2, type=9, cpp_type=9, label=1,
+      name='M_ROUND', full_name='helloworld.MarkerRequest.M_ROUND', index=1,
+      number=2, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='SENDER', full_name='helloworld.MarkerRequest.SENDER', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='NB', full_name='helloworld.MarkerRequest.NB', index=3,
+      number=4, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -60,27 +74,20 @@ _HELLOREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=32,
-  serialized_end=75,
+  serialized_end=106,
 )
 
 
-_HELLOREPLY = _descriptor.Descriptor(
-  name='HelloReply',
-  full_name='helloworld.HelloReply',
+_MARKERREPLY = _descriptor.Descriptor(
+  name='MarkerReply',
+  full_name='helloworld.MarkerReply',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='message', full_name='helloworld.HelloReply.message', index=0,
+      name='TYPE', full_name='helloworld.MarkerReply.TYPE', index=0,
       number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='message2', full_name='helloworld.HelloReply.message2', index=1,
-      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -97,27 +104,105 @@ _HELLOREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=77,
-  serialized_end=124,
+  serialized_start=108,
+  serialized_end=135,
 )
 
-DESCRIPTOR.message_types_by_name['HelloRequest'] = _HELLOREQUEST
-DESCRIPTOR.message_types_by_name['HelloReply'] = _HELLOREPLY
+
+_MESSAGEREQUEST = _descriptor.Descriptor(
+  name='MessageRequest',
+  full_name='helloworld.MessageRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='TYPE', full_name='helloworld.MessageRequest.TYPE', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=137,
+  serialized_end=167,
+)
+
+
+_MESSAGEREPLY = _descriptor.Descriptor(
+  name='MessageReply',
+  full_name='helloworld.MessageReply',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='TYPE', full_name='helloworld.MessageReply.TYPE', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=169,
+  serialized_end=197,
+)
+
+DESCRIPTOR.message_types_by_name['MarkerRequest'] = _MARKERREQUEST
+DESCRIPTOR.message_types_by_name['MarkerReply'] = _MARKERREPLY
+DESCRIPTOR.message_types_by_name['MessageRequest'] = _MESSAGEREQUEST
+DESCRIPTOR.message_types_by_name['MessageReply'] = _MESSAGEREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-HelloRequest = _reflection.GeneratedProtocolMessageType('HelloRequest', (_message.Message,), {
-  'DESCRIPTOR' : _HELLOREQUEST,
+MarkerRequest = _reflection.GeneratedProtocolMessageType('MarkerRequest', (_message.Message,), {
+  'DESCRIPTOR' : _MARKERREQUEST,
   '__module__' : 'helloworld_pb2'
-  # @@protoc_insertion_point(class_scope:helloworld.HelloRequest)
+  # @@protoc_insertion_point(class_scope:helloworld.MarkerRequest)
   })
-_sym_db.RegisterMessage(HelloRequest)
+_sym_db.RegisterMessage(MarkerRequest)
 
-HelloReply = _reflection.GeneratedProtocolMessageType('HelloReply', (_message.Message,), {
-  'DESCRIPTOR' : _HELLOREPLY,
+MarkerReply = _reflection.GeneratedProtocolMessageType('MarkerReply', (_message.Message,), {
+  'DESCRIPTOR' : _MARKERREPLY,
   '__module__' : 'helloworld_pb2'
-  # @@protoc_insertion_point(class_scope:helloworld.HelloReply)
+  # @@protoc_insertion_point(class_scope:helloworld.MarkerReply)
   })
-_sym_db.RegisterMessage(HelloReply)
+_sym_db.RegisterMessage(MarkerReply)
+
+MessageRequest = _reflection.GeneratedProtocolMessageType('MessageRequest', (_message.Message,), {
+  'DESCRIPTOR' : _MESSAGEREQUEST,
+  '__module__' : 'helloworld_pb2'
+  # @@protoc_insertion_point(class_scope:helloworld.MessageRequest)
+  })
+_sym_db.RegisterMessage(MessageRequest)
+
+MessageReply = _reflection.GeneratedProtocolMessageType('MessageReply', (_message.Message,), {
+  'DESCRIPTOR' : _MESSAGEREPLY,
+  '__module__' : 'helloworld_pb2'
+  # @@protoc_insertion_point(class_scope:helloworld.MessageReply)
+  })
+_sym_db.RegisterMessage(MessageReply)
 
 
 
@@ -127,16 +212,25 @@ _GREETER = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=126,
-  serialized_end=197,
+  serialized_start=200,
+  serialized_end=336,
   methods=[
   _descriptor.MethodDescriptor(
-    name='SayHello',
-    full_name='helloworld.Greeter.SayHello',
+    name='Marker',
+    full_name='helloworld.Greeter.Marker',
     index=0,
     containing_service=None,
-    input_type=_HELLOREQUEST,
-    output_type=_HELLOREPLY,
+    input_type=_MARKERREQUEST,
+    output_type=_MARKERREPLY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Message',
+    full_name='helloworld.Greeter.Message',
+    index=1,
+    containing_service=None,
+    input_type=_MESSAGEREQUEST,
+    output_type=_MESSAGEREPLY,
     serialized_options=None,
   ),
 ])

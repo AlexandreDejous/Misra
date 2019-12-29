@@ -17,6 +17,7 @@
 #import logging
 import sys
 import time
+import random
 
 import grpc
 
@@ -29,11 +30,141 @@ from concurrent import futures
 
 from threading import Thread, Lock
 
+
+table = ["localhost:50051","localhost:50052","localhost:50053","localhost:50054"]
 #-------------------------
 
+class node:
+    def __init__(self):
+        #self.m_round = 1#not sure i keep it
+        self.computeProba = 3
+        self.decreasingFactor = 1
+
+        self.round = 1
+        self.state = "active"#change init
+        self.color = "black"
+        self.nb = 0#nb of links visited
+        self.c = 0#length of a cycle
+
+        self.selfAddress = ""
+
+        self.links = []
+        self.fathers = []
+        self.successors = []
+        self.sons = []
+
+    def ping(self):
+        print("%s responding to ping !" % self.selfAddress)
 
 
+    def computeC(self):
+        self.c = ( len(self.links) * ( len(self.links) - 1 ) ) / 2 
 
+    def createTable(self,addresses):#creates the table of addresses in the node (in links) WORKS
+        for i in addresses:
+            self.links.append(i)
+
+    def setSelfAddress(self,address):#knows its address, deletes itslef from the links WORKS, and compute c
+        self.computeC()
+        self.links.remove(address)
+        self.selfAddress = address
+    
+
+    def newDFS(self):#call this if marker is here and process is active, or if self.round > marker.round
+        #self.round = self.round+1
+        self.fathers  = []
+        self.sons = []
+        self.successors = self.links.copy()
+        
+
+    def doDFS(self):
+        #print(self.successors)
+        #print(self.fathers)
+        if self.successors:#if successors non empty, dig
+
+            destination = self.successors.pop()
+            self.sons.append(destination)
+            self.nb = self.nb +1
+            
+            print(self.selfAddress + "---" + destination)
+            print(self.nb)
+            print("------------------------------------")
+            self.sendMarker(destination)
+        elif self.fathers:#if successors empty but father non empty, go up
+
+            destination = self.fathers.pop()
+            print(self.selfAddress + "---" + destination)
+            print(self.nb)
+            print("------------------------------------")
+            self.sendMarker(destination)
+        else:#report termination
+            print("terminated")
+            sys.exit()
+
+    
+
+    def isTerminated(self):
+        #if(self.state == "passive" and self.color == "white" and )
+        pass
+    #def newRound():#flushes nb, 
+
+    def sendMarker(self,destination):#makes the rpc call
+        if self.nb == self.c:
+            print("terminated")
+            sys.exit()
+        self.color = "white"
+        callRPCfunc(destination,self.round,self.selfAddress,self.nb)
+
+    def receiveMarker(self,m_round,sender,nb):#called via rpc
+        self.nb = nb
+        #add as father the sender
+        if self.sons:
+            if self.sons[-1] != sender:
+                self.fathers.append(sender)
+
+        if sender in self.successors:
+            self.successors.remove(sender)
+        if m_round > self.round:#re init les valeurs du dfs(father, successor)
+            self.newDFS()
+            self.round = m_round
+            #self.sons = [] #either its here or on newDFS
+        if self.color == "black":#if the node was active since last passage, increase the round value
+            self.nb = 0
+            self.newDFS()
+            #self.fathers.append(sender)#changed
+            self.round = self.round + 1
+        #add as father the sender
+        if self.sons:
+            if self.sons[-1] != sender:
+                self.fathers.append(sender)
+        self.doDFS()
+
+    def compute(self):
+        print(self.selfAddress + "computing...")
+        time.sleep(0.5)
+        
+    def sendMessagesRandom(self):
+        if self.links:
+            for destination in self.links:
+                rand = random.uniform(0, 10)
+                print(self.selfAddress + "generated : %s" % rand)
+                if rand < self.computeProba:#if the probs are right
+                    callRPCfunc2(destination)#call to rpc of second type
+        self.computeProba = self.computeProba - self.decreasingFactor#reducing the probs of sendign messages for next time
+    
+    def receiveMessage(self):#call this and doDFS in the initiator
+        self.color = "black"
+        self.compute()
+        self.sendMessagesRandom()
+
+def callRPCfunc(destination,m_round,sender,nb):
+    #instances[addrDict[destination]].ping()
+    #instances[addrDict[destination]].receiveMarker(m_round,sender,nb)
+    pass
+
+def callRPCfunc2(destination):
+    #instances[addrDict[destination]].receiveMessage()
+    pass
 
 
 #-----------------------server side
@@ -85,6 +216,7 @@ def send(data, address):
 
 if __name__ == '__main__':
     data = '1'
+
     #logging.basicConfig()
     lock = Lock()
     q = []

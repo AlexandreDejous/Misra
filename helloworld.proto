@@ -4,20 +4,30 @@ syntax = "proto3";
 
 package helloworld;
 
-message HelloRequest {
-    string name = 1;
-    string name2 = 2;
+message MarkerRequest {
+    string TYPE = 1;
+    int64 M_ROUND = 2;
+    string SENDER = 3;
+    int64 NB = 4;
 }
 
-message HelloReply {
-    string message = 1;
-    string message2 = 2;
+message MarkerReply {
+    string TYPE = 1;
+
+}
+
+message MessageRequest{
+    string TYPE = 1;
+}
+message MessageReply{
+    string TYPE = 1;
 }
 
 
 service Greeter {
 
-    rpc SayHello (HelloRequest) returns (HelloReply); 
+    rpc Marker(MarkerRequest) returns (MarkerReply); 
+    rpc Message(MessageRequest) returns (MessageReply);
 }
 
 //package name
