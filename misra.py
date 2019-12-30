@@ -33,7 +33,7 @@ table = ["localhost:50051","localhost:50052","localhost:50053","localhost:50054"
 class node:
     def __init__(self):
         #self.m_round = 1#not sure i keep it
-        self.computeProba = 0
+        self.computeProba = 8
         self.decreasingFactor = 1
 
         self.round = 1
@@ -125,8 +125,11 @@ class node:
         self.next()#NEXT HERE
 
     def receiveMarker(self,m_round,sender,nb):#called via rpc
+        print("---------------------------")
+        print(sender)
         print(nb)
         print(self.selfAddress)
+        print("---------------------------")
         time.sleep(0.5)
 
 
