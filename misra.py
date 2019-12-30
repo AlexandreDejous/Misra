@@ -1,20 +1,13 @@
-# Copyright 2015 gRPC authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""The Python implementation of the GRPC helloworld.Greeter client."""
+#procedure:
+#open 4 terminals
+#on the initiator: type misra.py 1 1
+#on the others: 
+#misra.py 2 2
+#misra.py 3 2
+#misra.py 4 2
+#then type "1" in the initiator's console
 
-#from __future__ import print_function
-#import logging
+
 import sys
 import time
 import random
@@ -40,7 +33,7 @@ table = ["localhost:50051","localhost:50052","localhost:50053","localhost:50054"
 class node:
     def __init__(self):
         #self.m_round = 1#not sure i keep it
-        self.computeProba = 8
+        self.computeProba = 0
         self.decreasingFactor = 1
 
         self.round = 1
@@ -55,6 +48,9 @@ class node:
         self.fathers = []
         self.successors = []
         self.sons = []
+        self.uv = []
+        self.f = []
+        self.s = []
 
     def ping(self):
         print("%s responding to ping !" % self.selfAddress)
@@ -62,6 +58,7 @@ class node:
 
     def computeC(self):
         self.c = ( len(self.links) * ( len(self.links) - 1 ) ) / 2 
+        #self.c = 6#---------------------------------------------------------------TODO
 
     def createTable(self,addresses):#creates the table of addresses in the node (in links) WORKS
         for i in addresses:
@@ -78,26 +75,34 @@ class node:
         self.fathers  = []
         self.sons = []
         self.successors = self.links.copy()
+        self.uv = self.links.copy()
+        self.f = []
+        self.s = []
         
 
     def doDFS(self):
-        #print(self.successors)
-        #print(self.fathers)
+        print("successors, fathers")
+        print(self.successors)
+        print(self.fathers)
+
         if self.successors:#if successors non empty, dig
 
             destination = self.successors.pop()
             self.sons.append(destination)
             self.nb = self.nb +1
             
+            
             print(self.selfAddress + "---" + destination)
-            print(self.nb)
+            #print(self.successors)
+            #print(self.nb)
             print("------------------------------------")
             self.sendMarker(destination)
         elif self.fathers:#if successors empty but father non empty, go up
 
             destination = self.fathers.pop()
             print(self.selfAddress + "---" + destination)
-            print(self.nb)
+            #print(self.successors)
+            #print(self.nb)
             print("------------------------------------")
             self.sendMarker(destination)
         else:#report termination
@@ -120,31 +125,97 @@ class node:
         self.next()#NEXT HERE
 
     def receiveMarker(self,m_round,sender,nb):#called via rpc
-        self.nb = nb
-        #add as father the sender
-        if self.sons:
-            if self.sons[-1] != sender:
-                self.fathers.append(sender)
-                if sender == "root":#
-                    self.fathers.remove("root")#
+        print(nb)
+        print(self.selfAddress)
+        time.sleep(0.5)
 
-        if sender in self.successors:
-            self.successors.remove(sender)
-        if m_round > self.round:#re init les valeurs du dfs(father, successor)
+
+        if self.color == "black":
+            #reset dfs
             self.newDFS()
+            #will send a nb of 0
+            nb = 0
+            #copy round and increase own round and round sent
             self.round = m_round
-            #self.sons = [] #either its here or on newDFS
-        if self.color == "black":#if the node was active since last passage, increase the round value
-            self.nb = 0
-            self.newDFS()
-            #self.fathers.append(sender)#changed
             self.round = self.round + 1
-        #add as father the sender
-        if self.sons:
-            if sender != "root":#
-                if self.sons[-1] != sender:
-                    self.fathers.append(sender)
-        self.doDFS()
+            m_round = m_round + 1
+            #pick a destination and pop uv
+            destination = self.uv.pop()
+            #add desti to sons
+            self.s.append(destination)
+            #set White
+            self.color = "white"
+            #send
+            callRPCfunc(destination,m_round,self.selfAddress,nb)
+            self.next()
+        if self.color == "white":
+            #check for termination
+            if nb == self.c-1:
+                print("Terminated (nb)")
+                sys.exit(0)
+
+
+            if self.round == m_round:
+                if self.s:
+                    if sender == self.s[-1]:   
+                        self.s.pop()#pop son
+                        if self.uv:
+                            #pop desti from uv and add desti to sons
+                            destination = self.uv.pop()
+                            self.s.append(destination)
+                            nb = nb + 1
+                            callRPCfunc(destination,m_round,self.selfAddress,nb)
+                            self.next()
+                        else:
+                            #go to last father
+                            if self.f:
+                                #pop from f
+                                destination = self.f.pop()
+                                #just go to f
+                                callRPCfunc(destination,m_round,self.selfAddress,nb)
+                                self.next()
+                            #if no father then terminated
+                            else:
+                                print("Terminated (f)")
+                                sys.exit(0)
+                    else:
+                        #send back to last sender
+                        callRPCfunc(sender,m_round,self.selfAddress,nb)
+                        self.next()
+                else:
+                    print("Terminated (s)")
+                    sys.exit(0)
+            else:
+                #reset DFS f,s and uv
+                self.newDFS()
+                #add as father the sender
+                self.f.append(sender)
+                #copy the round
+                self.round = m_round
+                #remove the sender from the unvisited this round
+                self.uv.remove(sender)
+                #dont forget to increase nb
+
+                if self.uv:
+                    #pop desti from uv and add desti to sons, increase nb, send
+                    destination = self.uv.pop()
+                    self.s.append(destination)
+                    nb = nb + 1
+                    callRPCfunc(destination,m_round,self.selfAddress,nb)
+                    self.next()
+                else:
+                    #go to last father
+                    if self.f:
+                        #pop from f
+                        destination = self.f.pop()
+                        #just go to f
+                        callRPCfunc(destination,m_round,self.selfAddress,nb)
+                        self.next()
+                    #if no father then terminated
+                    else:
+                        print("Terminated (f)")
+                        sys.exit(0)
+   
 
     def compute(self):
         print(self.selfAddress + "computing...")
@@ -154,7 +225,7 @@ class node:
         if self.links:
             for destination in self.links:
                 rand = random.uniform(0, 10)
-                print(self.selfAddress + "generated : %s" % rand)
+                #print(self.selfAddress + "generated : %s" % rand)
                 if rand < self.computeProba:#if the probs are right
                     callRPCfunc2(destination)#call to rpc of second type
         self.computeProba = self.computeProba - self.decreasingFactor#reducing the probs of sendign messages for next time
@@ -179,7 +250,11 @@ class node:
             val = q.pop(0)
             lock.release()
             if val.TYPE == "marker":#do the marker part
-                self.receiveMarker(val.M_ROUND,val.SENDER,val.NB)
+                if val.SENDER == "root":
+                    self.receiveMarker(val.M_ROUND,val.SENDER,val.NB)
+                    #self.doDFS()
+                else:
+                    self.receiveMarker(val.M_ROUND,val.SENDER,val.NB)
             elif val.TYPE == "message":#do the message part
                 self.receiveMessage()
         #else:
@@ -202,7 +277,7 @@ def callRPCfunc(destination,m_round,sender,nb):
         #stub2 = helloworld_pb2_grpc.GreeterStub(channel)
         #stub2.Message(helloworld_pb2.Empty)
 
-    print("NODE %s has sent to NODE %s a marker: m_round %d, nb %d" % (sender,destination, m_round,nb))
+    #print("NODE %s has sent to NODE %s a marker: m_round %d, nb %d" % (sender,destination, m_round,nb))
 
 
 def callRPCfunc2(destination):
@@ -212,7 +287,7 @@ def callRPCfunc2(destination):
 
         stub2 = helloworld_pb2_grpc.GreeterStub(channel)
         stub2.Message(helloworld_pb2.MessageRequest(TYPE = "message"))
-    print("NODE %s has sent to NODE %s a message" % (NODE.selfAddress,destination))
+    #print("NODE %s has sent to NODE %s a message" % (NODE.selfAddress,destination))
 
 
 
@@ -231,21 +306,21 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
     #instances[addrDict[destination]].receiveMarker(m_round,sender,nb)
     def Marker(self, request, context):
         Thread(target=writeQ(request)).start()
-        print("server received a Marker : %s" % request.TYPE)
+        #print("server received a Marker : %s" % request.TYPE)
         return helloworld_pb2.MarkerReply(TYPE='Type : %s , M_ROUND : %d , SENDER : %s , NB : %d' % (request.TYPE, request.M_ROUND, request.SENDER, request.NB)) #info is gathered here
 
     #instances[addrDict[destination]].receiveMessage()
     def Message(self,request, context):
         Thread(target=writeQ(request)).start()
-        print("Message of start of computation received")
+        #print("Message of start of computation received")
         return helloworld_pb2.MessageReply(TYPE="message")
 
 
 def writeQ(value):
-    print("waiting for lock, value:")
-    print(value)
+    #print("waiting for lock, value:")
+    #print(value)
     lock.acquire()
-    print("lock acquired")
+    #print("lock acquired")
     global q
     q.append(value)
     lock.release()
