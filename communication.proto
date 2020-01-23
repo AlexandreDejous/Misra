@@ -2,7 +2,7 @@
 
 syntax = "proto3";
 
-package helloworld;
+package communication;
 
 message MarkerRequest {
     string TYPE = 1;
@@ -24,7 +24,7 @@ message MessageReply{
 }
 
 
-service Greeter {
+service Remote {
 
     rpc Marker(MarkerRequest) returns (MarkerReply); 
     rpc Message(MessageRequest) returns (MessageReply);
@@ -35,6 +35,6 @@ service Greeter {
 //fields in messages
 
 //generate the files with this
-//python3 -m grpc_tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/helloworld.proto
+//python3 -m grpc_tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/communication.proto
 //WITH THIS
-//python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. helloworld.proto
+//python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. communication.proto

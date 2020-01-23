@@ -1,11 +1,39 @@
+#ALL COMMUNICATION (between nodes) is going through gRPC
+#each node has an internal state which is updated and used when receiving the marker for carrying out the misra algorithm
+#each node can simulate computation and reading/sending messages
+#each node has its own address, defined by the first argument send by the user, example:
+
+#arg1 = 3
+#address of node is : "localhost:5005<arg1>"  =  "localhost:50053"
+
+#the second argument defines whether the node is (what I call) an "initiator", if arg2 = 1
+#the initiator receives a message of computation and the marker,
+#it allows us to start the computation in the whole network and to introduce the marker in it
+
+#nodes send messages to other nodes with asynchronous functions using gRPC
+#nodes receives these messages also asychronously (through gRPC), package them in a queue.
+
+#A node is either:
+#computing something
+#processing the marker
+#sending the marker/messages by triggering asynchronous functions
+#reading from its own queue of messages
+
+
 #procedure:
 #open 4 terminals
-#on the initiator: type misra.py 1 1
+#if you use python3:
+#on the initiator type: python3 misra.py 1 1
 #on the others: 
-#misra.py 2 2
-#misra.py 3 2
-#misra.py 4 2
+#python3 misra.py 2 2
+#python3 misra.py 3 2
+#python3 misra.py 4 2
 #then type "1" in the initiator's console
+
+#the messages print in the console have this meaning:
+#<sender> ==== <nb> : the node received a marker with that nb from sender 
+
+#<nb> ==== <destination> : the node sent a marker with this nb to that destination
 
 
 import sys
@@ -14,8 +42,8 @@ import random
 
 import grpc
 
-import helloworld_pb2
-import helloworld_pb2_grpc
+import communication_pb2
+import communication_pb2_grpc
 
 #------
 
@@ -32,91 +60,49 @@ table = ["localhost:50051","localhost:50052","localhost:50053","localhost:50054"
 
 class node:
     def __init__(self):
-        #self.m_round = 1#not sure i keep it
+        #used for the random generation of messages
         self.computeProba = 8
         self.decreasingFactor = 1
 
         self.round = 1
-        self.state = "active"#change init
         self.color = "black"
         self.nb = 0#nb of links visited
         self.c = 0#length of a cycle
 
-        self.selfAddress = ""
+        self.selfAddress = ""#own adress
 
-        self.links = []
-        self.fathers = []
-        self.successors = []
-        self.sons = []
-        self.uv = []
-        self.f = []
-        self.s = []
+        self.links = []#available links (addresses) to other nodes (that marker/messages can travel through)
+        self.uv = []#unvisited nodes
+        self.f = []#father
+        self.s = []#sons
 
-    def ping(self):
+    def ping(self):#function used for debug
         print("%s responding to ping !" % self.selfAddress)
 
 
-    def computeC(self):
+    def computeC(self):#computes the length of a cycle
         self.c = ( len(self.links) * ( len(self.links) - 1 ) ) / 2 
-        #self.c = 6#---------------------------------------------------------------TODO
+
 
     def createTable(self,addresses):#creates the table of addresses in the node (in links) WORKS
         for i in addresses:
             self.links.append(i)
 
-    def setSelfAddress(self,address):#knows its address, deletes itslef from the links WORKS, and compute c
+    def setSelfAddress(self,address):#knows its address, deletes itslef from the links, and compute c
         self.computeC()
         self.links.remove(address)
         self.selfAddress = address
     
 
     def newDFS(self):#call this if marker is here and process is active, or if self.round > marker.round
-        #self.round = self.round+1
-        self.fathers  = []
-        self.sons = []
-        self.successors = self.links.copy()
+        #basically resets the values useful for the DFS
         self.uv = self.links.copy()
         self.f = []
         self.s = []
         
 
-    def doDFS(self):
-        print("successors, fathers")
-        print(self.successors)
-        print(self.fathers)
-
-        if self.successors:#if successors non empty, dig
-
-            destination = self.successors.pop()
-            self.sons.append(destination)
-            self.nb = self.nb +1
-            
-            
-            print(self.selfAddress + "---" + destination)
-            #print(self.successors)
-            #print(self.nb)
-            print("------------------------------------")
-            self.sendMarker(destination)
-        elif self.fathers:#if successors empty but father non empty, go up
-
-            destination = self.fathers.pop()
-            print(self.selfAddress + "---" + destination)
-            #print(self.successors)
-            #print(self.nb)
-            print("------------------------------------")
-            self.sendMarker(destination)
-        else:#report termination
-            print("terminated")
-            sys.exit()
-
-    
-
-    def isTerminated(self):
-        #if(self.state == "passive" and self.color == "white" and )
-        pass
-    #def newRound():#flushes nb, 
-
     def sendMarker(self,destination):#makes the rpc call
+        #turns the process white as the marker leaves the process for another one
         if self.nb == self.c:
             print("terminated")
             sys.exit()
@@ -125,16 +111,19 @@ class node:
         self.next()#NEXT HERE
 
     def receiveMarker(self,m_round,sender,nb):#called via rpc
+        #contains a large part of the misra algorithm
+        #here the marker is processed according to the internal state of the node,
+        #which decides if termination has occured, if the round continues, and where to send
+        # the marker next 
         print("---------------------------")
-        print(sender)
-        print(nb)
-        print(self.selfAddress)
-        print("---------------------------")
+        print("%s ==== %d"%(sender,nb))
+
         time.sleep(0.5)
 
 
         if self.color == "black":
             #reset dfs
+            print("MARKER RESET")
             self.newDFS()
             #will send a nb of 0
             nb = 0
@@ -221,19 +210,21 @@ class node:
    
 
     def compute(self):
+        #simple function that simulates computation time
         print(self.selfAddress + "computing...")
         time.sleep(0.5)
         
     def sendMessagesRandom(self):
+        #simulates the sending of messages of the node
+        #messages (that trigger computation in other nodes) are sent randomly to other nodes
         if self.links:
             for destination in self.links:
                 rand = random.uniform(0, 10)
-                #print(self.selfAddress + "generated : %s" % rand)
                 if rand < self.computeProba:#if the probs are right
-                    callRPCfunc2(destination)#call to rpc of second type
-        self.computeProba = self.computeProba - self.decreasingFactor#reducing the probs of sendign messages for next time
+                    callRPCfunc2(destination)#call to rpc of second type (send a message)
+        self.computeProba = self.computeProba - self.decreasingFactor#reducing the probs of sending messages for next time
     
-    def receiveMessage(self):#call this and doDFS in the initiator
+    def receiveMessage(self):#this method is called when the node as fetched a message from the queue (computation)
         self.color = "black"
         self.compute()
         self.sendMessagesRandom()
@@ -252,45 +243,39 @@ class node:
             lock.acquire()
             val = q.pop(0)
             lock.release()
-            if val.TYPE == "marker":#do the marker part
+            if val.TYPE == "marker":#if we received a marker, call receiveMarker
                 if val.SENDER == "root":
                     self.receiveMarker(val.M_ROUND,val.SENDER,val.NB)
-                    #self.doDFS()
                 else:
                     self.receiveMarker(val.M_ROUND,val.SENDER,val.NB)
-            elif val.TYPE == "message":#do the message part
+            elif val.TYPE == "message":##if we received a marker, call receiveMessage
                 self.receiveMessage()
-        #else:
-            #lock.release()
     
-    def startNode(self):
-        pass
 
 
 #------------------------ SENDER FUNCTIONS -------------------------
+#these functions are called when the node needs to send a message/marker to another node
 
 
 def callRPCfunc(destination,m_round,sender,nb):
-    #instances[addrDict[destination]].ping()
-    #instances[addrDict[destination]].receiveMarker(m_round,sender,nb)
+    #is called when the local node whishes to send a marker to another node
+    #after called the function immediately returns, allowing the node to instantly resume execution
+    print("%d ==== %s"%(nb,destination))
+    print("---------------------------")
+    
     with grpc.insecure_channel(destination) as channel:
 
-        stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.Marker(helloworld_pb2.MarkerRequest(TYPE="marker", M_ROUND = m_round, SENDER = sender, NB = nb))#info is sent here
-        #stub2 = helloworld_pb2_grpc.GreeterStub(channel)
-        #stub2.Message(helloworld_pb2.Empty)
+        stub = communication_pb2_grpc.RemoteStub(channel)
+        response = stub.Marker(communication_pb2.MarkerRequest(TYPE="marker", M_ROUND = m_round, SENDER = sender, NB = nb))#info is sent here
 
-    #print("NODE %s has sent to NODE %s a marker: m_round %d, nb %d" % (sender,destination, m_round,nb))
 
 
 def callRPCfunc2(destination):
-    #instances[addrDict[destination]].receiveMessage()
-    global NODE
+    #same, but for messages (that will trigger computation in the destination node)
     with grpc.insecure_channel(destination) as channel:
+        stub2 = communication_pb2_grpc.RemoteStub(channel)
+        stub2.Message(communication_pb2.MessageRequest(TYPE = "message"))
 
-        stub2 = helloworld_pb2_grpc.GreeterStub(channel)
-        stub2.Message(helloworld_pb2.MessageRequest(TYPE = "message"))
-    #print("NODE %s has sent to NODE %s a message" % (NODE.selfAddress,destination))
 
 
 
@@ -302,94 +287,58 @@ def callRPCfunc2(destination):
 #------------------------------------------------ SERVER FUNCTIONS ------------------------------------------------
 #these 2 write inside the Q
 #TYPE, M_ROUND, SENDER, NB
-#TYPE
 
-class Greeter(helloworld_pb2_grpc.GreeterServicer):
+#These functions are called in an asynchronous manner when another node sends a message/marker to this node.
+#the content of the received request is put in a queue, for the local node to read when it needs to.
 
-    #instances[addrDict[destination]].receiveMarker(m_round,sender,nb)
+
+class Remote(communication_pb2_grpc.RemoteServicer):
+
+
     def Marker(self, request, context):
+        #is called when the server received a marker
+        #it puts the received element in a queue so that the node can read it later, typically when
+        #the ode seeks for its next action (next() method)
         Thread(target=writeQ(request)).start()
-        #print("server received a Marker : %s" % request.TYPE)
-        return helloworld_pb2.MarkerReply(TYPE='Type : %s , M_ROUND : %d , SENDER : %s , NB : %d' % (request.TYPE, request.M_ROUND, request.SENDER, request.NB)) #info is gathered here
+        return communication_pb2.MarkerReply(TYPE='Type : %s , M_ROUND : %d , SENDER : %s , NB : %d' % (request.TYPE, request.M_ROUND, request.SENDER, request.NB)) #info is gathered here
 
-    #instances[addrDict[destination]].receiveMessage()
+
     def Message(self,request, context):
+        #same, but for messages (triggering computation)
         Thread(target=writeQ(request)).start()
-        #print("Message of start of computation received")
-        return helloworld_pb2.MessageReply(TYPE="message")
+        return communication_pb2.MessageReply(TYPE="message")
 
 
 def writeQ(value):
-    #print("waiting for lock, value:")
-    #print(value)
+    #allows to write a queue of received messages and marker
+    #once in a while, when the node finished its current action it fetches from the queue to know
+    #its next action (next() method)
+    #the queue is in a critical section
     lock.acquire()
-    #print("lock acquired")
     global q
     q.append(value)
     lock.release()
 
 #------------------------------------------------ SERVER SETUP -------------------------------------------
+#The server listens on the port specified by the user input
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+    communication_pb2_grpc.add_RemoteServicer_to_server(Remote(), server)
     server.add_insecure_port('[::]:5005'+sys.argv[1])
     server.start()
     server.wait_for_termination()
-
-#----------------------------------------client side
-
-
-
-def readQ():
-    time.sleep(20)
-    lock.acquire()
-    global q
-    print(q)
-    lock.release()
-
-#-------------------------------------------------------- ANCESTRY __ DO NOT TOUCH --------------------------
-
-def send(data, address):
-    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
-    # used in circumstances in which the with statement does not fit the needs
-    # of the code.
-
-    with grpc.insecure_channel(address) as channel:
-    #with grpc.insecure_channel('192.168.1.27:50051') as channel:
-
-        stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.Marker(helloworld_pb2.MarkerRequest(TYPE=data, M_ROUND = 2, SENDER = "PLACEHOLDER", NB = 6))#info is sent here
-        #stub2 = helloworld_pb2_grpc.GreeterStub(channel)
-        #stub2.Message(helloworld_pb2.Empty)
-
-    print("Greeter client received: " + response.TYPE)
-
-def send2(address):
-    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
-    # used in circumstances in which the with statement does not fit the needs
-    # of the code.
-
-    with grpc.insecure_channel(address) as channel:
-    #with grpc.insecure_channel('192.168.1.27:50051') as channel:
-
-        stub2 = helloworld_pb2_grpc.GreeterStub(channel)
-        stub2.Message(helloworld_pb2.MessageRequest(TYPE = "message"))
-        print("computationnal message sent!")
-
 
 
 #--------------------------------------------------- MAIN ------------------------------------------------
 
 if __name__ == '__main__':
-
-
-
     data = '1'
-    #logging.basicConfig()
+
+    #creates a lock and a queue to write incoming messages for a later used by the local node .the local node reads from the queue
+    #when it finishes what it was currently doing
     lock = Lock()
     q = []
-    #Thread(target=readQ).start()
 
     #START THE SERVER
     t = Thread(target=serve)
@@ -401,28 +350,20 @@ if __name__ == '__main__':
     NODE.setSelfAddress("localhost:5005"+sys.argv[1])
     NODE.newDFS()
 
-    #address = 'localhost:5005'+sys.argv[2]#address to send to
 
     if sys.argv[2] == "2":#if this node is not the initiator (arg2 = 2), then, start it without messages
         NODE.next()
-        #Thread(target=NODE.next()).start()
+
 
     #READS INPUT
     while(data != '0'):
         data = input("")
         if data == "1":
-            writeQ(helloworld_pb2.MessageRequest(TYPE = "message"))
-            writeQ(helloworld_pb2.MarkerRequest(TYPE="marker", M_ROUND = 1, SENDER = "root", NB = 0))#
-            #NODE.round = 0#in case of
+            writeQ(communication_pb2.MessageRequest(TYPE = "message"))
+            writeQ(communication_pb2.MarkerRequest(TYPE="marker", M_ROUND = 1, SENDER = "root", NB = 0))
+
             if sys.argv[2] == "1":#if node is initiator, start + w/ initial messages
                 NODE.next()
-            #Thread(target=NODE.next()).start()
-        
-        #if data == "1":
-        #    send(data,address)
-        #if data == "2":
-        #    send2(address)
-        
         
 
     sys.exit
